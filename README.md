@@ -24,7 +24,7 @@ judge_plot <- function(p = NULL, color = "red", alpha =.9, label = "you made\na 
                   clip = clip) +
     cowplot::draw_text(paste0(label, "  "), x=1, y=1, vjust=1.1, hjust=1.1, size=35, angle = 0,
               color=color, alpha=alpha, family = family, fontface = fontface) +
-    cowplot::draw_line(c(1, 1), c(0, 1), size=2.8, color=color, alpha=alpha)
+    cowplot::draw_line(c(1, 1), c(0, 1), size= 2.8, color=color, alpha=alpha)
 }
 
 
@@ -87,7 +87,7 @@ ggplot2::ggplot(data = data.frame(x = c(0, 1), y = c(0,1))) +
   ggplot2::theme_void() ->
 syntax_plot
 
-syntax_plot %>% judge_plot(...)
+syntax_plot %>% judge_plot(label = label, ...)
   
 }
 
@@ -116,17 +116,32 @@ tidytitanic::passengers |>
 ```
 
 ``` r
+    knitr::knit_code$get(name = "test_chunk_2") |>  
+  paste(collapse = "\n") ->
+text
+
+
+text
+#> [1] "library(magrittr)\ntidytitanic::passengers |> \n  janitor::tabyl(sex, survived)"
+eval(parse(text = text))
+#>     sex   0   1
+#>  female 154 308
+#>    male 709 142
+
 {
+    knitr::knit_code$get(name = "test_chunk_2") |>  
+  paste(collapse = "\n") ->
+text
 sink("temp.txt")
-# knitr::knit_code$get(name = "test_chunk_2") %>% parse() %>% eval()
+eval(parse(text = text))
 sink()
 }
 
-{
-sink('temp.txt')
-print(1:10)
-sink()
-}
+# {
+# sink('temp.txt')
+# print(1:10)
+# sink()
+# }
 ```
 
 ``` r
@@ -134,6 +149,8 @@ readLines("temp.txt") %>%
   paste(collapse = "\n") ->
   text
 
+text
+#> [1] ""
 
 library(ggplot2)
 ggplot(data = data.frame(x = c(0, 1), y = c(0,1))) +
