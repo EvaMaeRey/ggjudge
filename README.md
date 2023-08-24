@@ -3,8 +3,8 @@
 
 # ggjudge
 
-FDV (Wilke) strategy for expressing high level judgments about plot’s
-effectiveness, also extended to code, and hopefully soon to text console
+Using FDV (Wilke) strategy for expressing high level judgments about
+plot’s effectiveness, also extending to code, and to text console
 output. Uses cowplot’s ggdraw functions.
 
 <!-- badges: start -->
@@ -19,7 +19,7 @@ judge_plot <- function(p = NULL, color = "red", alpha =.9, label = "you made\na 
   
   if(is.null(p)){p <- ggplot2::last_plot()}
   
-  cowplot::ggdraw(p + theme(plot.margin = margin(50,150,10,10))
+  cowplot::ggdraw(p + theme(plot.margin = margin(50,70,10,10))
                   ,
                   clip = clip) +
     cowplot::draw_text(paste0(label, "  "), x=1, y=1, vjust=1.1, hjust=1.1, size=35, angle = 0,
@@ -54,7 +54,7 @@ ggplot() +
 
 ``` r
   
-judge_plot()
+judge_plot(label = "Awkward")
 ```
 
 <img src="man/figures/README-unnamed-chunk-2-2.png" width="100%" />
@@ -71,7 +71,7 @@ tidytitanic::passengers %>%
 
 ``` r
 
-judge_code_chunk <- function(chunk_name, label = "you wrote code", ...){
+judge_chunk_code <- function(chunk_name, label = "you wrote code", ...){
   
   knitr::knit_code$get(name = chunk_name) |>  
   paste(collapse = "\n") ->
@@ -91,7 +91,7 @@ syntax_plot %>% judge_plot(label = label, ...)
   
 }
 
-judge_code_chunk("test_chunk")
+judge_chunk_code("test_chunk", label = "repetative")
 ```
 
 <img src="man/figures/README-unnamed-chunk-3-1.png" width="100%" />
@@ -116,51 +116,67 @@ tidytitanic::passengers |>
 ```
 
 ``` r
-    knitr::knit_code$get(name = "test_chunk_2") |>  
+
+
+
+
+
+judge_chunk_output <- function(chunk_name, label = "some output"){
+    
+  knitr::knit_code$get(name = chunk_name) |>  
   paste(collapse = "\n") ->
 text
+  
+capture.output(eval(parse(text = text))) -> output
 
+output %>% 
+   paste(collapse = "\n") ->
+output_clean
 
-text
-#> [1] "library(magrittr)\ntidytitanic::passengers |> \n  janitor::tabyl(sex, survived)"
-eval(parse(text = text))
-#>     sex   0   1
-#>  female 154 308
-#>    male 709 142
-
-{
-    knitr::knit_code$get(name = "test_chunk_2") |>  
-  paste(collapse = "\n") ->
-text
-sink("temp.txt")
-eval(parse(text = text))
-sink()
-}
-
-# {
-# sink('temp.txt')
-# print(1:10)
-# sink()
-# }
-```
-
-``` r
-readLines("temp.txt") %>% 
-  paste(collapse = "\n") ->
-  text
-
-text
-#> [1] ""
 
 library(ggplot2)
 ggplot(data = data.frame(x = c(0, 1), y = c(0,1))) +
   aes(x = x, y = y) +
   geom_blank() +
-  annotate("text", label = text, x = 0, y = 1, hjust = 0, vjust = 1, size = 5, family = "Courier") + 
+  annotate("text", label = output_clean, 
+           x = 0, y = 1, hjust = 0, vjust = 1, 
+           size = 5, family = "Courier") + 
   theme_void() ->
 output_plot
 
-output_plot %>% judge_plot(family = "Helvetica", color = "red", alpha = .9, label = "awkward", fontface = "bold")
+output_plot %>% judge_plot(family = "Helvetica", color = "red", alpha = .9, label = label, fontface = "bold")
+
+}
+
+judge_chunk_code(chunk_name = "test_chunk_2")
+```
+
+<img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" />
+
+``` r
+judge_chunk_output(chunk_name = "test_chunk_2")
+```
+
+<img src="man/figures/README-unnamed-chunk-4-2.png" width="100%" />
+
+``` r
+
+library(patchwork)
+
+judge_chunk <- function(chunk_name, label_code = "code", label_output = "output", ...){
+  
+  
+  judge_chunk_code(chunk_name = chunk_name, 
+                   label = label_code) /
+    judge_chunk_output(chunk_name = chunk_name, 
+                       label = label_output)
+  
+  
+}
+```
+
+``` r
+judge_chunk(chunk_name = "test_chunk_2", label_code = "using indicator variable directly")
 ```
 
 <img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
