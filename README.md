@@ -13,22 +13,30 @@ output. Uses cowplot’s ggdraw functions.
 
 ``` r
 
-judge_plot <- function(p = NULL, color = "red", alpha =.9, label = "you made\na plot", 
-                  family = "Helvetica",
-                  fontface = "bold", clip = "on"){
+judge_plot <- function(
+  p = NULL, 
+  color = "red", 
+  alpha =.9, 
+  judgement = "you made\na plot", 
+  family = "Helvetica",
+  fontface = "bold", 
+  clip = "off", 
+  plot.margin = margin(50,70,10,10),
+  x=1, y=1, vjust=1.1, hjust=1.1, size=35, angle = 0
+  ){
   
   if(is.null(p)){p <- ggplot2::last_plot()}
   
-  cowplot::ggdraw(p + theme(plot.margin = margin(50,70,10,10))
-                  ,
+  cowplot::ggdraw(p + theme(plot.margin = plot.margin),
                   clip = clip) +
-    cowplot::draw_text(paste0(label, "  "), x=1, y=1, vjust=1.1, hjust=1.1, size=35, angle = 0,
+    cowplot::draw_text(paste0(judgement, ""), x=x, y=y, vjust=vjust, hjust=hjust, size=size, angle = angle,
               color=color, alpha=alpha, family = family, fontface = fontface) +
+    
     cowplot::draw_line(c(1, 1), c(0, 1), size= 2.8, color=color, alpha=alpha)
 }
+```
 
-
-
+``` r
 library(tidyverse)
 #> ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
 #> ✔ dplyr     1.1.0     ✔ readr     2.1.4
@@ -50,14 +58,13 @@ ggplot() +
   geom_bar()
 ```
 
-<img src="man/figures/README-unnamed-chunk-2-1.png" width="100%" />
+<img src="man/figures/README-survived_plot-1.png" width="100%" />
 
 ``` r
-  
-judge_plot(label = "Awkward")
+judge_plot(judgement = "awkward")
 ```
 
-<img src="man/figures/README-unnamed-chunk-2-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-3-1.png" width="100%" />
 
 ``` r
 tidytitanic::passengers %>% 
@@ -71,11 +78,17 @@ tidytitanic::passengers %>%
 
 ``` r
 
-judge_chunk_code <- function(chunk_name, label = "you wrote code", ...){
+# judge_code <- function(code, judgement, ...){
+#   
+#   
+#   
+# }
+
+judge_chunk_code <- function(chunk_name, judgement = "you wrote code", ...){
   
   knitr::knit_code$get(name = chunk_name) |>  
   paste(collapse = "\n") ->
-text
+code
 
 
 # text <- "tidytitanic::passengers %>% \n  mutate(adult = age >=18 ) %>% \n  filter(!is.na(age)) %>% \nggplot() + \n  aes(x = adult) + \n  geom_bar()"
@@ -83,18 +96,18 @@ text
 ggplot2::ggplot(data = data.frame(x = c(0, 1), y = c(0,1))) +
   ggplot2::aes(x = x, y = y) +
   ggplot2::geom_blank() +
-  ggplot2::annotate("text", label = text, x = 0, y = 1, hjust = 0, vjust = 1, size = 5, family = "Courier") + 
+  ggplot2::annotate("text", label = code, x = 0, y = 1, hjust = 0, vjust = 1, size = 5, family = "Courier") + 
   ggplot2::theme_void() ->
 syntax_plot
 
-syntax_plot %>% judge_plot(label = label, ...)
+syntax_plot %>% judge_plot(judgement = judgement, ...)
   
 }
 
-judge_chunk_code("test_chunk", label = "repetative")
+judge_chunk_code("test_chunk", judgement = "repetative")
 ```
 
-<img src="man/figures/README-unnamed-chunk-3-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" />
 
 # need to run in interactive session…
 
@@ -116,12 +129,7 @@ tidytitanic::passengers |>
 ```
 
 ``` r
-
-
-
-
-
-judge_chunk_output <- function(chunk_name, label = "some output"){
+judge_chunk_output <- function(chunk_name, judgement = "some output"){
     
   knitr::knit_code$get(name = chunk_name) |>  
   paste(collapse = "\n") ->
@@ -144,39 +152,44 @@ ggplot(data = data.frame(x = c(0, 1), y = c(0,1))) +
   theme_void() ->
 output_plot
 
-output_plot %>% judge_plot(family = "Helvetica", color = "red", alpha = .9, label = label, fontface = "bold")
+output_plot %>% judge_plot(family = "Helvetica", color = "red", alpha = .9, judgement = judgement, fontface = "bold")
 
 }
 
 judge_chunk_code(chunk_name = "test_chunk_2")
 ```
 
-<img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
 
 ``` r
 judge_chunk_output(chunk_name = "test_chunk_2")
 ```
 
-<img src="man/figures/README-unnamed-chunk-4-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-5-2.png" width="100%" />
+
+# maybe later ideas
 
 ``` r
-
 library(patchwork)
 
-judge_chunk <- function(chunk_name, label_code = "code", label_output = "output", ...){
+judge_chunk_plot <- function
+
+
+judge_chunk <- function(chunk_name, 
+                        judgement_code = "code", 
+                        judgement_output = "output", 
+                        ...){
   
   
   judge_chunk_code(chunk_name = chunk_name, 
-                   label = label_code) /
+                   judgement = judgement_code) /
     judge_chunk_output(chunk_name = chunk_name, 
-                       label = label_output)
+                       judgement = judgement_output)
   
   
 }
 ```
 
 ``` r
-judge_chunk(chunk_name = "test_chunk_2", label_code = "using indicator variable directly")
+judge_chunk(chunk_name = "test_chunk_2", judgement_code = "code: using indicator variable directly", judgement_output = "output: information is lost")
 ```
-
-<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
