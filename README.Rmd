@@ -2,7 +2,7 @@
 output: github_document
 ---
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
+
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
@@ -15,45 +15,130 @@ knitr::opts_chunk$set(
 
 # ggjudge
 
-Using FDV (Wilke) strategy for expressing high level judgments about plot's effectiveness, also extending to code, and to text console output. Uses cowplot's ggdraw functions.
+Discussion about the successes and failures of data visualization can be lengthy and nuanced.  This is in contrast to the speed at which data visualizations themselves communicate. Data visualization is powerful because of 'preattentive' visual processing:  patterns are perceived almost instantaneously compared with raw data counterparts.  
+
+To facilitate in a 'bottom-line-up-front' discussion of data visualization questions, analysts have used meta annotation of plots to communicate their perspectives and overall assessments of plots' success. Wilke 2018.
+
+The goal of ggjudge is to easily allow for more meta annotation in the ggplot2 framework. Using FDV (Wilke) strategy for expressing high level judgments about plot's effectiveness, also extending to code, and to text console output. Uses cowplot's ggdraw functions.
+
+The code is based on code that was used in Wilke's book.
+
+Furthermore, given the visual creators are likely to return to code, the same 'final judge' approach may be applied to code snippets to quickly communicate overall assessments of coding strategies. 
+
+Therefore, ggjudge also makes functions available for code judgement; the downside is that this code is imaged in a data visualization which is not lightweight and does not allow for copy/paste. Finally, ggjudge provides the ability to judge text outputs.
+
+
+Current functions are:
+
+- judge_plot
+- judge_chunk_code
+- judge_chunk_output_plot
+- judge_chunk_output_text
+
+Later 3 assume use of .Rmds; 
+
+These is not very customizable presently, but follows pretty closely to Wilk's choices, which were very effective. 
+
 
 <!-- badges: start -->
 <!-- badges: end -->
 
+# Judge plot
 
 
-```{r, include = T}
-
+```{r judge_plot, include = T}
+#' Title
+#'
+#' @param plot 
+#' @param color 
+#' @param alpha 
+#' @param judgement 
+#' @param family 
+#' @param fontface 
+#' @param clip 
+#' @param plot.margin 
+#' @param x 
+#' @param y 
+#' @param vjust 
+#' @param hjust 
+#' @param size 
+#' @param angle 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 judge_plot <- function(
-  p = NULL, 
+  plot = NULL, 
   color = "red", 
   alpha =.9, 
   judgement = "you made\na plot", 
   family = "Helvetica",
   fontface = "bold", 
   clip = "off", 
-  plot.margin = margin(50,70,10,10),
+  plot.margin = margin(50, 70, 10, 10),
   x=1, y=1, vjust=1.1, hjust=1.1, size=35, angle = 0
   ){
   
-  if(is.null(p)){p <- ggplot2::last_plot()}
+  if(is.null(plot)){plot <- ggplot2::last_plot()}
   
-  cowplot::ggdraw(p + theme(plot.margin = plot.margin),
+  cowplot::ggdraw(plot + theme(plot.margin = plot.margin),
                   clip = clip) +
     cowplot::draw_text(paste0(judgement, ""), x=x, y=y, vjust=vjust, hjust=hjust, size=size, angle = angle,
               color=color, alpha=alpha, family = family, fontface = fontface) +
     
     cowplot::draw_line(c(1, 1), c(0, 1), size= 2.8, color=color, alpha=alpha)
 }
-
-
 ```
+
+
 
 ```{r survived_plot}
 library(tidyverse)
 
+p <- tidytitanic::passengers %>% 
+  mutate(adult = age >= 18 ) %>% 
+  filter(!is.na(age)) %>% 
+ggplot() + 
+  aes(x = adult) + 
+  geom_bar()
 
-tidytitanic::passengers %>% 
+judge_plot(plot = p, judgement = "awkward")
+```
+
+
+
+
+# Judge chunk plot output
+
+
+```{r judge_chunk_output_plot}
+#' Title
+#'
+#' @param chunk_name 
+#' @param judgement 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+judge_chunk_output_plot <- function(chunk_name, judgement = "some output"){
+    
+  knitr::knit_code$get(name = chunk_name) |>  
+  paste(collapse = "\n") ->
+text
+  
+eval(parse(text = text)) -> p
+
+p %>% judge_plot(family = "Helvetica", color = "red", alpha = .9, judgement = judgement, fontface = "bold")
+
+}
+```
+
+
+```{r survived_plot2}
+# chunk name: survived_plot2
+p <- tidytitanic::passengers %>% 
   mutate(adult = age >= 18 ) %>% 
   filter(!is.na(age)) %>% 
 ggplot() + 
@@ -61,8 +146,9 @@ ggplot() +
   geom_bar()
 ```
 
+
 ```{r}
-judge_plot(judgement = "awkward")
+judge_chunk_output_plot(chunk_name = "survived_plot2")
 ```
 
 
@@ -71,26 +157,21 @@ judge_plot(judgement = "awkward")
 
 
 
-```{r test_chunk, eval = F}
-tidytitanic::passengers %>% 
-  ggplot() + 
-  aes(x = ifelse(survived, 
-                 "survived",
-                 "not survived")) + 
-  geom_bar() + 
-  labs(x = NULL)
-```
+
+# Judge code chunk code
 
 
-
-```{r}
-
-# judge_code <- function(code, judgement, ...){
-#   
-#   
-#   
-# }
-
+```{r judge_chunk_code}
+#' Title
+#'
+#' @param chunk_name 
+#' @param judgement 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 judge_chunk_code <- function(chunk_name, judgement = "you wrote code", ...){
   
   knitr::knit_code$get(name = chunk_name) |>  
@@ -110,23 +191,38 @@ syntax_plot
 syntax_plot %>% judge_plot(judgement = judgement, ...)
   
 }
+```
 
-judge_chunk_code("test_chunk", judgement = "repetative")
-  
+```{r titanic_plot, eval = F}
+tidytitanic::passengers %>% 
+  ggplot() + 
+  aes(x = ifelse(survived, 
+                 "survived",
+                 "not survived")) + 
+  geom_bar() + 
+  labs(x = NULL)
+```
+
+```{r}
+judge_chunk_code("titanic_plot", judgement = "repetative")
 ```
 
 
-# need to run in interactive session...
-
-```{r, test_chunk_2}
-library(magrittr)
-tidytitanic::passengers |> 
-  janitor::tabyl(sex, survived)
-```
+# Judge chunk text output
 
 
-```{r, eval = T}
-judge_chunk_output <- function(chunk_name, judgement = "some output"){
+
+```{r judge_chunk_output_text, eval = T}
+#' Title
+#'
+#' @param chunk_name 
+#' @param judgement 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+judge_chunk_output_text <- function(chunk_name, judgement = "some output"){
     
   knitr::knit_code$get(name = chunk_name) |>  
   paste(collapse = "\n") ->
@@ -152,10 +248,69 @@ output_plot
 output_plot %>% judge_plot(family = "Helvetica", color = "red", alpha = .9, judgement = judgement, fontface = "bold")
 
 }
-
-judge_chunk_code(chunk_name = "test_chunk_2")
-judge_chunk_output(chunk_name = "test_chunk_2")
 ```
+
+```{r titanic_table}
+library(magrittr)
+tidytitanic::passengers |> 
+  janitor::tabyl(sex, survived)
+```
+
+
+```{r}
+judge_chunk_output_text(chunk_name = "titanic_table")
+```
+
+# send functions to package .R dir
+
+```{r}
+chunk_send_to_dir_r <- function(chunk_name){
+  
+  for(i in 1:length(chunk_name)){
+
+knitr::knit_code$get(name = chunk_name[i]) |>
+    paste(collapse = "\n") |>
+    writeLines(con = paste0("R/", chunk_name[i], ".R"))
+    
+  }
+  
+}
+
+
+chunk_send_to_dir_r(chunk_name = c("judge_plot", "judge_chunk_code", "judge_chunk_output_plot", "judge_chunk_output_text"))
+```
+
+
+# send tests to tests 
+
+
+```{r}
+chunk_send_to_dir_tests_testthat <- function(chunk_name){
+  
+  for(i in 1:length(chunk_name)){
+
+knitr::knit_code$get(name = chunk_name[i]) |>
+    paste(collapse = "\n") |>
+    writeLines(con = paste0("tests/testthat/", chunk_name[i], ".R"))
+    
+  }
+  
+}
+
+
+```
+
+```{r test_judge_chunk_code, eval = F}
+testthat::test_that("multiplication works", {
+  expect_equal(2 * 2, 4)
+})
+```
+
+
+```{r}
+chunk_send_to_dir_tests_testthat("test_judge_chunk_code")
+```
+
 
 # maybe later ideas
 
@@ -183,6 +338,16 @@ judge_chunk <- function(chunk_name,
 
 
 ```{r, fig.width=7, fig.height=10, eval = F}
-judge_chunk(chunk_name = "test_chunk_2", judgement_code = "code: using indicator variable directly", judgement_output = "output: information is lost")
+judge_chunk(chunk_name = "table_chunk", 
+            judgement_code = "code: using indicator variable directly",
+            judgement_output = "output: information is lost")
 ```
+
+
+
+
+
+<!-- This Rmd file contains all the code needed to define an R package.  Press "Knit" in RStudio or more generally run `litr::render("name-of-this-file.Rmd")` to generate the R package.  Remember that when you want to modify anything about the R package, you should modify this document rather than the package that is outputted.
+-->
+
 
